@@ -39,18 +39,17 @@ CLASS lcl_email_handler IMPLEMENTATION.
 
     TRY.
         DATA(lo_screen) = NEW zcl_eui_screen(
-          iv_dynnr   = '1010'
+          iv_dynnr        = '1010'
 
           " Actual only for global ZCL_* classes where you cannot acsess P_UNAME directly!
-          ir_context = NEW ts_context( p_uname = 'FFF' ) ).
+          ir_context      = NEW ts_context( p_uname = 'FFF' )
+
+          " Title & status is fixed (not changable in ON_PBO_EVENT)
+          iv_status_title = |Please change SAP login to yours!| ).
       CATCH zcx_eui_exception INTO DATA(lo_err).
         MESSAGE lo_err TYPE 'S' DISPLAY LIKE 'E'.
         RETURN.
     ENDTRY.
-
-    " Title & status is fixed (not changable in ON_PBO_EVENT)
-    lo_screen->ms_status-is_fixed = abap_true.
-    lo_screen->ms_status-title    = |Please change SAP login to yours!|.
 
     " Make gray @see include ZR_PY000_DEMO_SSC  (commented for PAI)
     lo_screen->customize( group1 = 'GRY' input = COND #( WHEN sy-uname = 'BOSS' THEN '1'

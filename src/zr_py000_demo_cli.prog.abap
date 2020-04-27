@@ -27,7 +27,7 @@ CLASS lcl_report IMPLEMENTATION.
     " Could be different screens
     IF sy-dynnr <> '1000'.
       " lo_1010_screen->pbo( ) ?
-      PERFORM auto_screen_pbo IN PROGRAM saplzfg_eui_screen.
+      CALL FUNCTION 'ZFM_EUI_PBO'.
       RETURN.
     ENDIF.
 
@@ -222,15 +222,14 @@ CLASS lcl_report IMPLEMENTATION.
            icon     = icon_xls
            text     = |Report| ) )
 
-        " Loop and modify
+        " Loop and modify   LVC_T_FCAT
         it_mod_catalog = lt_catalog
 
         " Default handle = '0100'
-        is_variant = VALUE disvariant( report = sy-cprog variant = p_layout ) ).
+        is_variant = VALUE disvariant( report = sy-cprog variant = p_layout )
 
-    " Set PF-STATUS & Set TITLEBAR
-    lo_alv->ms_status-is_fixed = abap_true.
-    lo_alv->ms_status-title    = 'Demo PY program - result'.
+        " Set PF-STATUS & Set TITLEBAR
+        iv_status_title = 'Demo PY program - result' ).
 
     " And show
     lo_alv->show( io_handler      = me
