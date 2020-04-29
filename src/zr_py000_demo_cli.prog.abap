@@ -32,7 +32,12 @@ CLASS lcl_report IMPLEMENTATION.
     ENDIF.
 
     " Change selection screen " @see -> SE38 - > ZEUI_TEST_SCREEN_02 (or https://github.com/bizhuka/eui)
-    DATA(lo_screen) = NEW zcl_eui_screen( iv_dynnr = '1000' ).
+    TRY.
+      DATA(lo_screen) = NEW zcl_eui_screen( iv_dynnr = '1000' ).
+    CATCH ZCX_EUI_EXCEPTION INTO DATA(lo_error).
+      MESSAGE lo_error TYPE 'S' DISPLAY LIKE 'E'.
+      RETURN.
+    ENDTRY.
 
     " Set any condition by SCREEN-NAME or SCREEN-GROUP1
     lo_screen->customize( name = 'PNPTIMED'

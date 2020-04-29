@@ -41,7 +41,7 @@ CLASS lcl_regular_pay IMPLEMENTATION.
     CHECK mt_pernr_rgdir IS NOT INITIAL.
 
     " Find all MOLGA
-    SELECT p1~pernr, t~molga INTO TABLE @DATA(lt_p1_molga)
+    SELECT p1~pernr, t~molga INTO TABLE @DATA(lt_p1_molga)   "#EC CI_BUFFJOIN
     FROM pa0001 AS p1 INNER JOIN t001p AS t ON t~werks = p1~werks AND t~btrtl = p1~btrtl
     FOR ALL ENTRIES IN @mt_pernr_rgdir
     WHERE p1~pernr =  @mt_pernr_rgdir-pernr
@@ -147,7 +147,7 @@ CLASS lcl_regular_pay IMPLEMENTATION.
     CHECK lt_pernr IS NOT INITIAL.
 
     "Read from the transparent payroll directory in table HRPY_RGDIR
-    SELECT * INTO TABLE @DATA(lt_rgdir)
+    SELECT * INTO TABLE @DATA(lt_rgdir) "#EC CI_ALL_FIELDS_NEEDED
     FROM hrpy_rgdir
     FOR ALL ENTRIES IN @lt_pernr
     WHERE pernr = @lt_pernr-pernr
