@@ -13,6 +13,8 @@ INFOTYPES 0001.
 
 SELECTION-SCREEN BEGIN OF BLOCK bl_opt WITH FRAME TITLE TEXT-opt.
 PARAMETERS:
+  p_empty  AS CHECKBOX DEFAULT abap_true,
+  p_show   AS CHECKBOX DEFAULT abap_true,
   p_layout TYPE disvariant-variant,
   p_std    AS CHECKBOX.
 SELECTION-SCREEN END OF BLOCK bl_opt.

@@ -57,7 +57,6 @@ TYPES:
     endda    TYPE endda,
     scr_info TYPE string,
     t        TYPE REF TO data,
-    p        TYPE REF TO data,
   END OF ts_report.
 
 *---------------------------------------------------------------------*

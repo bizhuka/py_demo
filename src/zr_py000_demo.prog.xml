@@ -34,9 +34,21 @@
     </item>
     <item>
      <ID>S</ID>
+     <KEY>P_EMPTY</KEY>
+     <ENTRY>Show empty</ENTRY>
+     <LENGTH>18</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
      <KEY>P_LAYOUT</KEY>
      <ENTRY>ALV layout</ENTRY>
      <LENGTH>18</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>P_SHOW</KEY>
+     <ENTRY>Show inplace</ENTRY>
+     <LENGTH>20</LENGTH>
     </item>
     <item>
      <ID>S</ID>

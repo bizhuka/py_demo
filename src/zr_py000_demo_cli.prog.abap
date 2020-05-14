@@ -33,10 +33,10 @@ CLASS lcl_report IMPLEMENTATION.
 
     " Change selection screen " @see -> SE38 - > ZEUI_TEST_SCREEN_02 (or https://github.com/bizhuka/eui)
     TRY.
-      DATA(lo_screen) = NEW zcl_eui_screen( iv_dynnr = '1000' ).
-    CATCH ZCX_EUI_EXCEPTION INTO DATA(lo_error).
-      MESSAGE lo_error TYPE 'S' DISPLAY LIKE 'E'.
-      RETURN.
+        DATA(lo_screen) = NEW zcl_eui_screen( iv_dynnr = '1000' ).
+      CATCH zcx_eui_exception INTO DATA(lo_error).
+        MESSAGE lo_error TYPE 'S' DISPLAY LIKE 'E'.
+        RETURN.
     ENDTRY.
 
     " Set any condition by SCREEN-NAME or SCREEN-GROUP1
@@ -115,7 +115,9 @@ CLASS lcl_report IMPLEMENTATION.
                                                   ELSE zcl_py000=>mc_py_mode-pnpce ) ).
 
     " No data in period
-    CHECK lt_results[] IS NOT INITIAL.
+    IF p_empty <> abap_true.
+      CHECK lt_results[] IS NOT INITIAL.
+    ENDIF.
 
     " If have any sum
     ASSIGN mr_alv->* TO <lt_alv>.
@@ -209,7 +211,7 @@ CLASS lcl_report IMPLEMENTATION.
     ENDLOOP.
 
     " create ALV " @see -> SE38 - > ZEUI_TEST_ALV (or https://github.com/bizhuka/eui)
-    DATA(lo_alv) = NEW zcl_eui_alv(
+    NEW zcl_eui_alv(
         ir_table    = mr_alv
 
         is_layout   = VALUE lvc_s_layo(
@@ -234,11 +236,11 @@ CLASS lcl_report IMPLEMENTATION.
         is_variant = VALUE disvariant( report = sy-cprog variant = p_layout )
 
         " Set PF-STATUS & Set TITLEBAR
-        iv_status_title = 'Demo PY program - result' ).
+        iv_status_title = 'Demo PY program - result'
 
-    " And show
-    lo_alv->show( io_handler      = me
-                  iv_handlers_map = 'ON_HOTSPOT_CLICK;ON_USER_COMMAND'  ). " <- Optional (by default all handlers)
+      " And show
+      )->show( io_handler      = me
+               iv_handlers_map = 'ON_HOTSPOT_CLICK;ON_USER_COMMAND'  ). " <- Optional (by default all handlers)
   ENDMETHOD.
 
   METHOD on_hotspot_click.
@@ -287,7 +289,7 @@ CLASS lcl_report IMPLEMENTATION.
          high      = <ls_item>-high ) ).
 
       " Create new ALV
-      DATA(lo_alv) = NEW zcl_eui_alv(
+      NEW zcl_eui_alv(
        ir_table       = REF #( lt_rt )
 
        it_filter      = lt_filter
@@ -299,13 +301,10 @@ CLASS lcl_report IMPLEMENTATION.
           smalltitle = abap_true )
 
        it_sort        = VALUE #(
-         ( fieldname = 'LGART' subtot = abap_true expa = abap_true ) ) ).
+         ( fieldname = 'LGART' subtot = abap_true expa = abap_true ) )
 
-      " As popup
-      lo_alv->popup( ).
-
-      " show ALV
-      lo_alv->show( ).
+      )->popup(   " As popup
+      )->show( ). " And show ALV
     ENDLOOP.
   ENDMETHOD.
 
@@ -355,24 +354,17 @@ CLASS lcl_report IMPLEMENTATION.
     ENDLOOP.
 
     " Insert columns first
-    lo_xtt->merge( is_block = VALUE ts_merge0( a = lt_cloumn ) iv_block_name = 'C' ).
+    lo_xtt->merge( iv_block_name = 'C'
+                   is_block      = VALUE ts_merge0( a = lt_cloumn )
 
-    " Prepare data
-    DATA(ls_report) = VALUE ts_report(
-       " Info about period   " TODO fill scr_info
-       begda = pn-begda
-       endda = pn-begda
+         )->merge( iv_block_name = 'R'
+                   is_block      = VALUE ts_report(
+                                      " Info about period   " TODO fill scr_info
+                                      begda = pn-begda
+                                      endda = pn-begda
 
-       " Main data as a tree
-       t     = zcl_xtt_replace_block=>tree_create(
-          it_table  = mr_alv
-          iv_fields = 'WERKS;BTRTL' )
-
-       " Pivot table data
-       p  = mr_alv ).
-
-    " Add data
-    lo_xtt->merge( iv_block_name = 'R' is_block = ls_report ).
+                                      " as a tree in 1-st sheet, for pivot table @see 3-d sheet
+                                      t     = mr_alv ) ).
 
     " Do not show file
     IF iv_send_email = abap_true.
@@ -380,8 +372,12 @@ CLASS lcl_report IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    " Download each file
-    lo_xtt->show( ).
+    " Download or show?
+    IF p_show = abap_true.
+      lo_xtt->show( ).
+      RETURN.
+    ENDIF.
+    lo_xtt->download( ).
   ENDMETHOD.
 
 ENDCLASS.
