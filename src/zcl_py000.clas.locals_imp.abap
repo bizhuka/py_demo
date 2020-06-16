@@ -7,116 +7,153 @@ CLASS lcl_regular_pay IMPLEMENTATION.
     FIELD-SYMBOLS  <lt_pernr> TYPE STANDARD TABLE.
 
     " Init 1 time only
-    mv_py_mode = iv_py_mode.
-
-    CASE mv_py_mode.
-      WHEN zcl_py000=>mc_py_mode-table.
-        ASSIGN it_pernr TO <lt_pernr>.
-
-      WHEN zcl_py000=>mc_py_mode-pnpce.
-        ASSIGN ('(SAPDBPNPCE)G_CLUSTER_SELECTED_PERNRS') TO <lt_pernr>.
-
-      WHEN zcl_py000=>mc_py_mode-pnp.
+    IF it_pernr IS NOT INITIAL.
+      ASSIGN it_pernr TO <lt_pernr>.
+    ELSE.
+      " Try do detect
+      ASSIGN ('(SAPDBPNPCE)G_CLUSTER_SELECTED_PERNRS') TO <lt_pernr>.
+      IF <lt_pernr> IS NOT ASSIGNED.
         ASSIGN ('(SAPDBPNP)PERNR_TAB[]') TO <lt_pernr>.
-
-        " Use standardc class
-      WHEN zcl_py000=>mc_py_mode-skip.
-        " Try do detect
-        ASSIGN ('(SAPDBPNPCE)G_CLUSTER_SELECTED_PERNRS') TO <lt_pernr>.
-        IF <lt_pernr> IS NOT ASSIGNED.
-          ASSIGN ('(SAPDBPNP)PERNR_TAB[]') TO <lt_pernr>.
-        ENDIF.
-
-      WHEN OTHERS.
-        zcx_eui_exception=>raise_dump( iv_message = |IV_PY_MODE = '{ mv_py_mode }' is not correct!| ).
-    ENDCASE.
+      ENDIF.
+    ENDIF.
 
     " What?
     IF <lt_pernr> IS NOT ASSIGNED.
-      zcx_eui_exception=>raise_dump( iv_message = |Is the '{ sy-cprog }' based on LDB '{ mv_py_mode }'?| ).
+      zcx_eui_exception=>raise_dump( iv_message = |Is the '{ sy-cprog }' based on LDB ?| ).
     ENDIF.
 
+    " New items
+    DATA lt_pernr_rgdir LIKE mt_pernr_rgdir.
+
     " check also the order of table ?
-    mt_pernr_rgdir = CORRESPONDING #( <lt_pernr> ).
-    CHECK mt_pernr_rgdir IS NOT INITIAL.
+    lt_pernr_rgdir = CORRESPONDING #( <lt_pernr> ).
+    CHECK lt_pernr_rgdir IS NOT INITIAL.
 
     " Find all MOLGA
-    SELECT p1~pernr, t~molga INTO TABLE @DATA(lt_p1_molga)   "#EC CI_BUFFJOIN
+    SELECT p1~pernr, t~molga INTO TABLE @DATA(lt_p1_molga) "#EC CI_BUFFJOIN
     FROM pa0001 AS p1 INNER JOIN t001p AS t ON t~werks = p1~werks AND t~btrtl = p1~btrtl
-    FOR ALL ENTRIES IN @mt_pernr_rgdir
-    WHERE p1~pernr =  @mt_pernr_rgdir-pernr
+    FOR ALL ENTRIES IN @lt_pernr_rgdir
+    WHERE p1~pernr =  @lt_pernr_rgdir-pernr
       AND p1~sprps =  @space
       AND p1~endda >= @iv_begda
       AND p1~begda <= @iv_endda.
 
     " set molga
     LOOP AT lt_p1_molga ASSIGNING FIELD-SYMBOL(<ls_p1_molga>).
-      READ TABLE mt_pernr_rgdir ASSIGNING FIELD-SYMBOL(<ls_pernr_rgdir>)
+      READ TABLE lt_pernr_rgdir ASSIGNING FIELD-SYMBOL(<ls_pernr_rgdir>)
        WITH TABLE KEY pernr = <ls_p1_molga>-pernr.
       CHECK sy-subrc = 0.
 
       <ls_pernr_rgdir>-molga = <ls_p1_molga>-molga.
     ENDLOOP.
+
+    " Insert new items. in a LOOP ?
+    INSERT LINES OF lt_pernr_rgdir INTO TABLE mt_pernr_rgdir.
   ENDMETHOD.
 
   METHOD get_payroll.
-    READ TABLE mt_pernr_rgdir ASSIGNING FIELD-SYMBOL(<ls_pernr_rgdir>)
-     WITH TABLE KEY pernr = iv_pernr.
-    CHECK sy-subrc = 0.
+    DO 2 TIMES.
+      " First attempt?
+      DATA(lv_index) = sy-index.
+
+      READ TABLE mt_pernr_rgdir ASSIGNING FIELD-SYMBOL(<ls_pernr_rgdir>)
+       WITH TABLE KEY pernr = iv_pernr.
+      IF sy-subrc = 0.
+        EXIT.
+      ENDIF.
+
+      " init cache
+      IF lv_index = 1.
+        init( iv_begda = iv_begda
+              iv_endda = iv_endda
+              it_pernr = it_pernr ).
+      ENDIF.
+    ENDDO.
+
+    " Oops
+    IF <ls_pernr_rgdir> IS NOT ASSIGNED.
+      zcx_eui_exception=>raise_dump( iv_message = |Cannot detect MOLGA for '{ iv_pernr }'| ).
+    ENDIF.
 
     " Get molga
     DATA(lv_molga) = <ls_pernr_rgdir>-molga.
     CHECK lv_molga IS NOT INITIAL.
 
-    DO 1 TIMES.
-      " Exist ?
-      ASSIGN mt_payroll[ KEY primary_key
-                             molga      = lv_molga
-                             pay_period = iv_pay_period ] TO FIELD-SYMBOL(<ls_payroll>).
-      CHECK sy-subrc <> 0.
+    " Return as a result
+    READ TABLE mt_payroll INTO rs_payroll
+     WITH TABLE KEY molga      = lv_molga
+                    pay_period = iv_pay_period.
+    CHECK sy-subrc <> 0.
 
-      " Add to cache
-      INSERT VALUE #( molga      = lv_molga
-                      pay_period = iv_pay_period ) INTO TABLE mt_payroll ASSIGNING <ls_payroll>.
+    " Add to cache
+    INSERT VALUE #( molga      = lv_molga
+                    pay_period = iv_pay_period ) INTO TABLE mt_payroll ASSIGNING FIELD-SYMBOL(<ls_payroll>).
 
-      " Use standardc class
-      IF mv_py_mode = zcl_py000=>mc_py_mode-skip.
-        cl_hrpay99_prr_4_pnp_reps=>get_instance(
-         EXPORTING
+    " Use standardc class
+    IF iv_std_class = abap_true.
+      DATA(ls_range) = zcl_py000=>get_with_month_end( iv_pay_period && '01' ).
+      cl_hrpay99_prr_4_pnp_reps=>get_instance(
+       EXPORTING
+        im_molga                = lv_molga
+        im_pn_paper             = CONV #( iv_pay_period )
+        im_pn_begda             = ls_range-begda
+        im_pn_endda             = ls_range-endda
+        im_pnpdisbd             = sy-datum  " standard didn't use this field but control non-empty value
+        im_pn_permo             = iv_permo
+        im_ipview               = iv_ipview
+        im_add_retroes_to_rgdir = iv_add_retroes_to_rgdir
+        im_arch_too             = iv_arch_too
+       IMPORTING
+         ex_prr     = <ls_payroll>-payroll
+       EXCEPTIONS
+         OTHERS     = 4 ).
+    ELSE.
+      " Use own cache
+      CREATE OBJECT <ls_payroll>-payroll TYPE lcl_regular_pay
+        EXPORTING
           im_molga                = lv_molga
-          im_pn_paper             = CONV #( iv_pay_period )
-          im_pnpdisbd             = sy-datum  " standard didn't use this field but control non-empty value
-          im_pn_permo             = iv_permo
+          im_pabrp                = CONV #( iv_pay_period+4(2) )
+          im_pabrj                = CONV #( iv_pay_period(4) )
+          im_permo                = iv_permo
           im_ipview               = iv_ipview
           im_add_retroes_to_rgdir = iv_add_retroes_to_rgdir
           im_arch_too             = iv_arch_too
-         IMPORTING
-           ex_prr     = <ls_payroll>-payroll
-         EXCEPTIONS
-           OTHERS     = 4 ).
-      ELSE.
-        " Use own cache
-        CREATE OBJECT <ls_payroll>-payroll TYPE lcl_regular_pay
-          EXPORTING
-            im_molga                = lv_molga
-            im_pabrp                = CONV #( iv_pay_period+4(2) )
-            im_pabrj                = CONV #( iv_pay_period(4) )
-            im_permo                = iv_permo
-            im_ipview               = iv_ipview
-            im_add_retroes_to_rgdir = iv_add_retroes_to_rgdir
-            im_arch_too             = iv_arch_too
-          EXCEPTIONS
-            OTHERS                  = 4.
-      ENDIF.
+        EXCEPTIONS
+          OTHERS                  = 4.
+    ENDIF.
 
-      " Oops
-      CHECK sy-subrc <> 0.
+    " Oops
+    IF sy-subrc <> 0.
       MESSAGE ID sy-msgid TYPE 'S' NUMBER sy-msgno WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4 DISPLAY LIKE 'E'.
       CLEAR <ls_payroll>-payroll.
-    ENDDO.
+      RETURN.
+    ENDIF.
 
-    " Return result
-    ro_payroll = <ls_payroll>-payroll.
+    " Cast Base class
+
+    " regular & off-cycle run
+    TRY.
+        <ls_payroll>-payroll_payper ?= <ls_payroll>-payroll.
+      CATCH cx_sy_move_cast_error.
+        CLEAR <ls_payroll>-payroll_payper.
+    ENDTRY.
+
+    " everything within a single day
+    TRY.
+        <ls_payroll>-payroll_sngday ?= <ls_payroll>-payroll.
+      CATCH cx_sy_move_cast_error.
+        CLEAR <ls_payroll>-payroll_sngday.
+    ENDTRY.
+
+    " everything within a timespan
+    TRY.
+        <ls_payroll>-payroll_tispan ?= <ls_payroll>-payroll.
+      CATCH cx_sy_move_cast_error.
+        CLEAR <ls_payroll>-payroll_tispan.
+    ENDTRY.
+
+    " And return
+    rs_payroll = <ls_payroll>.
   ENDMETHOD.
 
   METHOD read_rgdir_from.
@@ -147,7 +184,7 @@ CLASS lcl_regular_pay IMPLEMENTATION.
     CHECK lt_pernr IS NOT INITIAL.
 
     "Read from the transparent payroll directory in table HRPY_RGDIR
-    SELECT * INTO TABLE @DATA(lt_rgdir) "#EC CI_ALL_FIELDS_NEEDED
+    SELECT * INTO TABLE @DATA(lt_rgdir)       "#EC CI_ALL_FIELDS_NEEDED
     FROM hrpy_rgdir
     FOR ALL ENTRIES IN @lt_pernr
     WHERE pernr = @lt_pernr-pernr

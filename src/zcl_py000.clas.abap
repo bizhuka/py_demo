@@ -7,20 +7,27 @@ public section.
   type-pools ABAP .
 
   types:
-    BEGIN OF TS_DATE_PERIOD,
+    BEGIN OF ts_payroll_results,
+        " Base class
+        payroll        TYPE REF TO cl_hrpay99_prr_4_pnp_reps,
+        " regular & off-cycle run
+        payroll_payper TYPE REF TO cl_hrpay99_prr_4_pnp_payper,
+        " everything within a single day
+        payroll_sngday TYPE REF TO cl_hrpay99_prr_4_pnp_sngday,
+        " everything within a timespan
+        payroll_tispan TYPE REF TO cl_hrpay99_prr_4_pnp_tispan,
+
+        results        TYPE h99_hr_pay_result_tab,
+      END OF ts_payroll_results .
+  types:
+    tt_payroll_results TYPE STANDARD TABLE OF ts_payroll_results WITH DEFAULT KEY .
+  types:
+    BEGIN OF ts_date_period,
         begda TYPE d,
         endda TYPE d,
-      END OF TS_DATE_PERIOD .
+      END OF ts_date_period .
   types:
     tt_pernr TYPE STANDARD TABLE OF hrpernr WITH DEFAULT KEY .
-
-  constants:
-    BEGIN OF MC_PY_MODE,
-     pnpce TYPE STRING VALUE 'PNPCE',
-     pnp   TYPE STRING VALUE 'PNP',
-     table TYPE STRING VALUE 'TABLE',
-     skip  TYPE STRING VALUE 'SKIP',
-   END OF MC_PY_MODE .
 
   class-methods READ_INFTY
     importing
@@ -45,10 +52,10 @@ public section.
       !IV_IPVIEW type H99_IPVIEW default ABAP_TRUE
       !IV_ADD_RETROES_TO_RGDIR type H99_ADD_RETROES default ABAP_TRUE
       !IV_ARCH_TOO type ARCH_TOO default ABAP_FALSE
-      !IV_PY_MODE type STRING default MC_PY_MODE-PNPCE
+      !IV_STD_CLASS type ABAP_BOOL optional
       !IT_PERNR type ZCL_PY000=>TT_PERNR optional
     returning
-      value(RT_PAY_RESULT) type H99_HR_PAY_RESULT_TAB .
+      value(RT_PAYROLL_RESULTS) type TT_PAYROLL_RESULTS .
   class-methods GET_WITH_MONTH_END
     importing
       !IV_FROM type BEGDA
@@ -224,29 +231,25 @@ ENDMETHOD.
 
 
 METHOD read_payroll_results.
-  " Init 1 time
-  IF lcl_regular_pay=>mv_py_mode IS INITIAL.
-    lcl_regular_pay=>init( iv_py_mode = iv_py_mode
-                           it_pernr   = it_pernr
-                           iv_begda   = iv_begda
-                           iv_endda   = iv_endda ).
-  ENDIF.
-
   " YEAR + MONTH
   DATA(lv_begda_mon) = CONV faper( iv_begda(6) ).
 
   " Process all periods month by month
   WHILE iv_endda(6) >= lv_begda_mon.
-    DATA(lo_payroll) = lcl_regular_pay=>get_payroll(
+    DATA(ls_payroll) = lcl_regular_pay=>get_payroll(
       iv_pernr                = iv_pernr
+      iv_begda                = iv_begda
+      iv_endda                = iv_endda
+      it_pernr                = it_pernr
+      iv_std_class            = iv_std_class
       iv_pay_period           = lv_begda_mon
       iv_ipview               = iv_ipview
       iv_permo                = iv_permo
       iv_add_retroes_to_rgdir = iv_add_retroes_to_rgdir
       iv_arch_too             = iv_arch_too ).
 
-    IF lo_payroll IS NOT INITIAL.
-      lo_payroll->get_pernr_payr_results_allin1(
+    IF ls_payroll-payroll IS NOT INITIAL.
+      ls_payroll-payroll->get_pernr_payr_results_allin1(
         EXPORTING im_pernr                       = iv_pernr
         IMPORTING ex_pernr_payroll_results       = DATA(lt_pernr_pr)
         EXCEPTIONS country_version_not_available = 1
@@ -254,12 +257,15 @@ METHOD read_payroll_results.
                    no_entries_found              = 3 " <--- Is it possible ?
                    read_error                    = 4
                    OTHERS                        = 5 ).
-      IF sy-subrc <> 0.
-        CLEAR lt_pernr_pr[].
+      IF sy-subrc = 0.
+        " Add results
+        APPEND VALUE #( payroll        = ls_payroll-payroll
+                        payroll_payper = ls_payroll-payroll_payper
+                        payroll_sngday = ls_payroll-payroll_sngday
+                        payroll_tispan = ls_payroll-payroll_tispan
+                        results = lt_pernr_pr[] ) TO rt_payroll_results.
       ENDIF.
-
-      " Add results
-      INSERT LINES OF lt_pernr_pr INTO TABLE rt_pay_result.
+      CLEAR lt_pernr_pr[].
     ENDIF.
 
     " Next month

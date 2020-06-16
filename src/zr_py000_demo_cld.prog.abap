@@ -27,8 +27,8 @@ TYPES:
     t_debug_usr  TYPE RANGE OF syuname,
 
     " E-mail
-    body    TYPE string,
-    subject TYPE text50,
+    body         TYPE string,
+    subject      TYPE text50,
   END OF ts_option,
 
   "  ALV
@@ -39,6 +39,21 @@ TYPES:
     btrtl TYPE p0001-btrtl,
     " Other columns is dynamic
   END OF ts_alv,
+
+  " For drilldown
+  BEGIN OF ts_rt,
+    a_payper TYPE faper,
+    a_payty  TYPE payty,
+    seqnr    TYPE pc261-seqnr,
+    abkrs    TYPE pc261-abkrs,
+    ocrsn    TYPE pc261-ocrsn,
+    fpper    TYPE pc261-fpper,
+    inper    TYPE pc261-inper,
+    srtza    TYPE pc261-srtza.
+    INCLUDE TYPE pc207.
+TYPES:
+END OF ts_rt,
+tt_rt TYPE STANDARD TABLE OF ts_rt WITH DEFAULT KEY,
 
   " Document structure
   BEGIN OF ts_column,
@@ -67,9 +82,10 @@ CLASS lcl_report DEFINITION FINAL.
   PUBLIC SECTION.
     CONSTANTS:
       BEGIN OF mc_cmd,
-        email          TYPE ui_func VALUE 'EMAIL',    " Gos menu pressed
-        group_by_werks TYPE syucomm VALUE 'WERKS',    " Change ALV runtime
-        download       TYPE syucomm VALUE 'DONWLOAD', " Report button pressed
+        email         TYPE ui_func VALUE 'EMAIL',                " Gos menu pressed
+        group_by_main TYPE syucomm VALUE 'GROUP_BY_WERKS-BTRTL', " Change ALV runtime
+        group_by_rt   TYPE syucomm VALUE 'GROUP_BY_LGART',       " Change ALV runtime
+        download      TYPE syucomm VALUE 'DONWLOAD',             " Report button pressed
       END OF mc_cmd.
 
     DATA:
@@ -99,17 +115,16 @@ CLASS lcl_report DEFINITION FINAL.
 
       get_filtered_rt
         IMPORTING
-                  is_column_opt    TYPE ts_column_opt
-                  it_results       TYPE h99_hr_pay_result_tab
-        RETURNING VALUE(rt_result) TYPE hrpay99_rt,
+                  is_column_opt      TYPE ts_column_opt
+                  it_payroll_results TYPE zcl_py000=>tt_payroll_results
+        RETURNING VALUE(rt_rt)       TYPE tt_rt, " hrpay99_rt,
 
-      on_hotspot_click FOR EVENT hotspot_click OF cl_gui_alv_grid
+      on_hotspot_click FOR EVENT hotspot_click OF cl_gui_alv_grid ##CALLED
         IMPORTING
-            sender
             e_row_id
             e_column_id,
 
-      on_user_command FOR EVENT user_command OF cl_gui_alv_grid
+      on_user_command FOR EVENT user_command OF cl_gui_alv_grid   ##CALLED
         IMPORTING
             sender
             e_ucomm,
@@ -141,14 +156,14 @@ CLASS lcl_email_handler DEFINITION FINAL.
 
       start_of_selection,
 
-      on_gos_menu_clicked FOR EVENT function_selected OF cl_gui_toolbar
+      on_gos_menu_clicked FOR EVENT function_selected OF cl_gui_toolbar ##CALLED
         IMPORTING
             fcode,
 
       " on_pbo_event FOR EVENT pbo_event OF zif_eui_manager,
 
       " OF 1010 screen
-      on_pai_event FOR EVENT pai_event OF zif_eui_manager
+      on_pai_event FOR EVENT pai_event OF zif_eui_manager ##CALLED
         IMPORTING
             sender
             iv_command

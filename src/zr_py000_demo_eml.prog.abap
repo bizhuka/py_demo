@@ -30,7 +30,8 @@ CLASS lcl_email_handler IMPLEMENTATION.
 
     " tr. SM50 by menu Administration -> Program -> Debugging
     WHILE sy-batch = abap_true.
-      sy-index = sy-index.
+      sy-index = sy-index ##NEEDED " debug from here
+      .
     ENDWHILE.
   ENDMETHOD.
 
@@ -142,7 +143,7 @@ CLASS lcl_email_handler IMPLEMENTATION.
         ENDIF.
 
         " From ...
-        DATA(lo_sender) = cl_cam_address_bcs=>create_internet_address( `sap@sap.com` ).
+        DATA(lo_sender) = cl_cam_address_bcs=>create_internet_address( |sap@sap.com| ).
 
       CATCH cx_address_bcs INTO DATA(lo_err).
         MESSAGE lo_err TYPE 'S' DISPLAY LIKE 'E'.
@@ -175,7 +176,7 @@ CLASS lcl_email_handler IMPLEMENTATION.
     " Login info
     SELECT SINGLE name_textc INTO rv_full_name
     FROM user_addr
-    WHERE bname = iv_uname " ##WARN_OK  backward compatibility
+    WHERE bname = iv_uname ##WARN_OK  " backward compatibility
     .
   ENDMETHOD.
 ENDCLASS.

@@ -41,7 +41,7 @@ CLASS lcl_report IMPLEMENTATION.
 
     " Set any condition by SCREEN-NAME or SCREEN-GROUP1
     lo_screen->customize( name = 'PNPTIMED'
-                          input = COND #( WHEN sy-datum+6(2) < 15 THEN '0'
+                          input = COND #( WHEN sy-datum+6(2) > 15 THEN '0'
                                                                   ELSE '1' ) ).
     " And update screen
     lo_screen->pbo( ).
@@ -106,13 +106,13 @@ CLASS lcl_report IMPLEMENTATION.
 **********************************************************************
     " PY part. read RT[]
     DATA(lt_results) = zcl_py000=>read_payroll_results(
-      iv_pernr   = pernr-pernr
-      iv_begda   = pn-begda
-      iv_endda   = pn-endda
+      iv_pernr     = pernr-pernr
+      iv_begda     = pn-begda
+      iv_endda     = pn-endda
 
       " just for test
-      iv_py_mode = COND #( WHEN p_std = abap_true THEN zcl_py000=>mc_py_mode-skip " Use stadard class fro PY
-                                                  ELSE zcl_py000=>mc_py_mode-pnpce ) ).
+      iv_std_class = p_std " Use stadard class for PY
+    ).
 
     " No data in period
     IF p_empty <> abap_true.
@@ -131,50 +131,62 @@ CLASS lcl_report IMPLEMENTATION.
       ASSIGN COMPONENT <ls_column_opt>-name OF STRUCTURE <ls_alv> TO <lv_alv_betrg>.
 
       " Always add to ALV sum
-      LOOP AT get_filtered_rt( is_column_opt = <ls_column_opt>
-                               it_results    = lt_results ) ASSIGNING FIELD-SYMBOL(<ls_rt>).
+      LOOP AT get_filtered_rt( is_column_opt      = <ls_column_opt>
+                               it_payroll_results = lt_results ) ASSIGNING FIELD-SYMBOL(<ls_rt>).
         ADD <ls_rt>-betrg TO <lv_alv_betrg>.
       ENDLOOP.
     ENDLOOP. " t_column_opt option
   ENDMETHOD.
 
   METHOD get_filtered_rt.
-    " RGDIR_COND         <--- If you want to SKIP RGDIR item
-    " period-srtza = 'A' <--- For eaxample
-    " Cast results to CL_HR_PAY_RESULT_XX (Where XX your MOLGA)
-    LOOP AT it_results INTO DATA(lo_result) WHERE (is_column_opt-rgdir_cond).
-      " Process RT
-      LOOP AT lo_result->inter-rt[] ASSIGNING FIELD-SYMBOL(<ls_rt>).
-        " '+' or '-'
-        DATA(lv_sign) = abap_undefined.
+    LOOP AT it_payroll_results ASSIGNING FIELD-SYMBOL(<ls_payroll_result>).
+      "№0 - Info
+      DATA(ls_rt) = VALUE ts_rt(
+        a_payper = <ls_payroll_result>-payroll_payper->a_payper
+        a_payty  = <ls_payroll_result>-payroll_payper->a_payty
+      ).
 
-        " +
-        IF <ls_rt>-lgart IN is_column_opt-t_lgart_plus[] AND is_column_opt-t_lgart_plus[] IS NOT INITIAL.
-          lv_sign = abap_true.
-        ENDIF.
+      " RGDIR_COND         <--- If you want to SKIP RGDIR item
+      " period-srtza = 'A' <--- For eaxample
+      " Cast results to CL_HR_PAY_RESULT_XX (Where XX your MOLGA)
+      LOOP AT <ls_payroll_result>-results INTO DATA(lo_result) WHERE (is_column_opt-rgdir_cond).
+        "№1 - Info
+        MOVE-CORRESPONDING lo_result->period TO ls_rt.
 
-        " -
-        IF <ls_rt>-lgart IN is_column_opt-t_lgart_minus[] AND is_column_opt-t_lgart_minus[] IS NOT INITIAL.
-          lv_sign = abap_false.
-        ENDIF.
+        " Process RT
+        LOOP AT lo_result->inter-rt[] ASSIGNING FIELD-SYMBOL(<ls_rt>).
+          " '+' or '-'
+          DATA(lv_sign) = abap_undefined.
 
-        " Just skip sum
-        CHECK lv_sign <> abap_undefined.
+          " +
+          IF <ls_rt>-lgart IN is_column_opt-t_lgart_plus[] AND is_column_opt-t_lgart_plus[] IS NOT INITIAL.
+            lv_sign = abap_true.
+          ENDIF.
 
-        " Yes add to result
-        INSERT <ls_rt> INTO TABLE rt_result ASSIGNING FIELD-SYMBOL(<ls_result>).
+          " -
+          IF <ls_rt>-lgart IN is_column_opt-t_lgart_minus[] AND is_column_opt-t_lgart_minus[] IS NOT INITIAL.
+            lv_sign = abap_false.
+          ENDIF.
 
-        " inverse sign
-        IF lo_result->period-srtza = 'P'.
-          lv_sign = xsdbool( lv_sign <> abap_true ).
-        ENDIF.
+          " Just skip sum
+          CHECK lv_sign <> abap_undefined.
 
-        " Add or subtract
-        IF lv_sign <> abap_true.
-          <ls_result>-betrg = - <ls_result>-betrg.
-        ENDIF.
-      ENDLOOP. " inter-rt[]
-    ENDLOOP. " PY result
+          "№2 - Info Yes add to result
+          MOVE-CORRESPONDING <ls_rt> TO ls_rt.
+          INSERT ls_rt INTO TABLE rt_rt ASSIGNING FIELD-SYMBOL(<ls_result_rt>).
+
+          " inverse sign
+          IF lo_result->period-srtza = 'P'.
+            lv_sign = xsdbool( lv_sign <> abap_true ).
+          ENDIF.
+
+          " Add or subtract
+          IF lv_sign <> abap_true.
+            <ls_result_rt>-betrg = - <ls_result_rt>-betrg.
+          ENDIF.
+        ENDLOOP. " inter-rt[]
+      ENDLOOP. " PY result
+    ENDLOOP.
   ENDMETHOD.
 
   METHOD end_of_selection.
@@ -221,7 +233,7 @@ CLASS lcl_report IMPLEMENTATION.
         )
 
         it_toolbar = VALUE ttb_button(
-        ( function = mc_cmd-group_by_werks
+        ( function = mc_cmd-group_by_main
            icon     = icon_relationship
            text     = |Group by Pers.area| )
 
@@ -236,7 +248,7 @@ CLASS lcl_report IMPLEMENTATION.
         is_variant = VALUE disvariant( report = sy-cprog variant = p_layout )
 
         " Set PF-STATUS & Set TITLEBAR
-        iv_status_title = 'Demo PY program - result'
+        iv_status_title = |Demo PY program - result| " by default get TITLE from sy-cprog
 
       " And show
       )->show( io_handler      = me
@@ -253,26 +265,27 @@ CLASS lcl_report IMPLEMENTATION.
     CHECK sy-subrc = 0.
 
     " Get current Personnel Number
-    ASSIGN COMPONENT 'PERNR' OF STRUCTURE <ls_alv> TO FIELD-SYMBOL(<lv_pernr>).
+    DATA(ls_alv) = CORRESPONDING ts_alv( <ls_alv> ).
 
     " tr. PA20
-    IF e_column_id = 'PERNR'.
-      zcl_py000=>pa_drilldown( iv_pernr = <lv_pernr>
+    IF e_column_id-fieldname = 'PERNR'.
+      zcl_py000=>pa_drilldown( iv_pernr = ls_alv-pernr
                                iv_infty = '0001' ).
       RETURN.
     ENDIF.
 
     " Get results
     DATA(lt_results) = zcl_py000=>read_payroll_results(
-      iv_pernr   = <lv_pernr>
-      iv_begda   = pn-begda
-      iv_endda   = pn-endda ).
+      iv_pernr     = ls_alv-pernr
+      iv_begda     = pn-begda
+      iv_endda     = pn-endda
+      iv_std_class = p_std ).
 
     " Drilldown to sum
-    LOOP AT ms_option-t_column_opt ASSIGNING FIELD-SYMBOL(<ls_column_opt>) WHERE name = e_column_id.
+    LOOP AT ms_option-t_column_opt ASSIGNING FIELD-SYMBOL(<ls_column_opt>) WHERE name = e_column_id-fieldname.
       " Get RT items
-      DATA(lt_rt) = get_filtered_rt( is_column_opt = <ls_column_opt>
-                                     it_results    = lt_results ).
+      DATA(lt_rt) = get_filtered_rt( is_column_opt      = <ls_column_opt>
+                                     it_payroll_results = lt_results ).
 
       DATA(lt_lgart_all) = VALUE tr_lgart( ).
       APPEND LINES OF:
@@ -294,17 +307,20 @@ CLASS lcl_report IMPLEMENTATION.
 
        it_filter      = lt_filter
 
-       it_mod_catalog = VALUE #( ( fieldname = 'BETRG' col_pos = 8 do_sum = abap_true ) )
+       it_mod_catalog = VALUE lvc_t_fcat( ( fieldname = 'BETRG' col_pos = 8 do_sum = abap_true ) )
 
-       is_layout      = VALUE #(
-          grid_title = |{ <lv_pernr> } - { <ls_column_opt>-name } ({ <ls_column_opt>-text })|
+       is_layout      = VALUE lvc_s_layo(
+          grid_title = |{ ls_alv-pernr } - { <ls_column_opt>-name } ({ <ls_column_opt>-text })|
           smalltitle = abap_true )
 
-       it_sort        = VALUE #(
-         ( fieldname = 'LGART' subtot = abap_true expa = abap_true ) )
+        it_toolbar = VALUE ttb_button(
+        ( function = mc_cmd-group_by_rt
+           icon     = icon_relationship
+           text     = |Group by LGART| ) )
 
       )->popup(   " As popup
-      )->show( ). " And show ALV
+      )->show( io_handler      = me
+               iv_handlers_map = 'ON_USER_COMMAND' ).
     ENDLOOP.
   ENDMETHOD.
 
@@ -315,7 +331,9 @@ CLASS lcl_report IMPLEMENTATION.
         do_download( ).
 
         " Change data grouping
-      WHEN mc_cmd-group_by_werks.
+      WHEN OTHERS.
+        CHECK e_ucomm CP 'GROUP_BY_*'.
+
         sender->get_sort_criteria(
          IMPORTING
            et_sort = DATA(lt_sort) ).
@@ -324,9 +342,10 @@ CLASS lcl_report IMPLEMENTATION.
         IF lt_sort IS NOT INITIAL.
           CLEAR lt_sort.
         ELSE.
-          lt_sort = VALUE #(
-          ( fieldname = 'WERKS' subtot = abap_true expa = abap_true )
-          ( fieldname = 'BTRTL' subtot = abap_true expa = abap_true ) ).
+          SPLIT e_ucomm+9 AT '-' INTO TABLE DATA(lt_field).
+          LOOP AT lt_field ASSIGNING FIELD-SYMBOL(<lv_field>).
+            APPEND VALUE #( fieldname = <lv_field> subtot = abap_true expa = abap_true ) TO lt_sort.
+          ENDLOOP.
         ENDIF.
 
         " Set & refresh
@@ -342,20 +361,20 @@ CLASS lcl_report IMPLEMENTATION.
       io_file = NEW zcl_xtt_file_smw0( 'ZR_PY000_REPORT.XLSX' ) ).
 
     " Create dynamic columns
-    DATA(lt_cloumn) = VALUE tt_column( ).
+    DATA(lt_column) = VALUE tt_column( ).
     LOOP AT ms_option-t_column_opt ASSIGNING FIELD-SYMBOL(<ls_column_opt>).
       " Add 1 time
-      CHECK NOT line_exists( lt_cloumn[ name = <ls_column_opt>-name ] ).
+      CHECK NOT line_exists( lt_column[ name = <ls_column_opt>-name ] ).
 
       APPEND VALUE #(
        name     = <ls_column_opt>-name
        label    = <ls_column_opt>-text
-       col_name = `{R-T-` && <ls_column_opt>-name  && `;func=SUM}` ) TO lt_cloumn.
+       col_name = `{R-T-` && <ls_column_opt>-name  && `;func=SUM}` ) TO lt_column.
     ENDLOOP.
 
     " Insert columns first
     lo_xtt->merge( iv_block_name = 'C'
-                   is_block      = VALUE ts_merge0( a = lt_cloumn )
+                   is_block      = VALUE ts_merge0( a = lt_column )
 
          )->merge( iv_block_name = 'R'
                    is_block      = VALUE ts_report(
