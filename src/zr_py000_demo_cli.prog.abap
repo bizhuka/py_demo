@@ -247,8 +247,8 @@ CLASS lcl_report IMPLEMENTATION.
         " Default handle = '0100'
         is_variant = VALUE disvariant( report = sy-cprog variant = p_layout )
 
-        " Set PF-STATUS & Set TITLEBAR
-        iv_status_title = |Demo PY program - result| " by default get TITLE from sy-cprog
+      " Set PF-STATUS & Set TITLEBAR ( by default get TITLE from sy-cprog )
+      )->set_status( VALUE #( title = |Demo PY program - result| )
 
       " And show
       )->show( io_handler      = me

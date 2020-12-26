@@ -43,10 +43,10 @@ CLASS lcl_email_handler IMPLEMENTATION.
           iv_dynnr        = '1010'
 
           " Actual only for global ZCL_* classes where you cannot acsess P_UNAME directly!
-          ir_context      = NEW ts_context( p_uname = 'FFF' )
+          ir_context      = NEW ts_context( p_uname = 'FFF' ) ).
 
-          " Title & status is fixed (not changable in ON_PBO_EVENT)
-          iv_status_title = |Please change SAP login to yours!| ).
+        " Title & status is fixed (not changable in ON_PBO_EVENT)
+        lo_screen->set_status( VALUE #( title = |Please change SAP login to yours!| ) ).
       CATCH zcx_eui_exception INTO DATA(lo_err).
         MESSAGE lo_err TYPE 'S' DISPLAY LIKE 'E'.
         RETURN.

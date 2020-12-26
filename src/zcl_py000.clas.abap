@@ -34,6 +34,7 @@ public section.
       !IV_PERNR type PERNR-PERNR
       !IV_BEGDA type BEGDA default '18000101'
       !IV_ENDDA type ENDDA default '99991231'
+      !IV_TCLAS type PSPAR-TCLAS default 'A'
       !IV_WHERE type CSEQUENCE optional
       !IT_RANGE type STANDARD TABLE optional
       !IT_RANGE2 type STANDARD TABLE optional
@@ -213,6 +214,7 @@ METHOD read_infty.
       infty           = lv_infty
       begda           = iv_begda
       endda           = iv_endda
+      tclas           = iv_tclas
       sprps           = iv_sprps
     TABLES
       infty_tab       = <lt_copy>
