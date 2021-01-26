@@ -27,7 +27,7 @@ CLASS lcl_report IMPLEMENTATION.
     " Could be different screens
     IF sy-dynnr <> '1000'.
       " lo_1010_screen->pbo( ) ?
-      CALL FUNCTION 'ZFM_EUI_PBO'.
+      zcl_eui_screen=>top_pbo( ).
       RETURN.
     ENDIF.
 
