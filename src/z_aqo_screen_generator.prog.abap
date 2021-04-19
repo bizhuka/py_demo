@@ -35,7 +35,8 @@ CLASS lcl_main IMPLEMENTATION.
       SET PARAMETER ID: 'ZAQO_PACKAGE_ID' FIELD <ls_opt>-package_id,
                         'ZAQO_OPTION_ID'  FIELD <ls_opt>-option_id,
                         'ZAQO_COMMAND'    FIELD '_EDIT_VALUES'.
-      SUBMIT zaqo_editor_old AND RETURN. "#EC CI_SUBMIT.
+
+      CALL TRANSACTION 'ZAQO_EDITOR_OLD' AND SKIP FIRST SCREEN.
     ENDLOOP.
   ENDMETHOD.
 ENDCLASS.
