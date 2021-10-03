@@ -373,7 +373,9 @@ METHOD _diloag_screen.
   lo_screen->customize( name = 'P_3_VIS'    input = lv_input ).
 
   " As popup
-  lo_screen->popup( iv_col_end = 87 ).
+  DATA lv_col_end TYPE i.
+  lo_screen->get_dimension( IMPORTING ev_col_end = lv_col_end ).
+  lo_screen->popup( iv_col_end = lv_col_end ).
 
   " Process action
   lv_cmd = lo_screen->show( ).

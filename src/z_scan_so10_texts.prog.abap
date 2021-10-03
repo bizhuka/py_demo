@@ -94,7 +94,7 @@ CLASS lcl_report IMPLEMENTATION.
                                       ( fnam    = 'RSSCE-TDNAME'  fval   = ls_stxh-tdname )
                                       ( fnam    = 'RSSCE-TDID'    fval   = ls_stxh-tdid )
                                       ( fnam    = 'RSSCE-TDSPRAS' fval   = ls_stxh-tdspras ) ).
-    CALL TRANSACTION 'SO10' USING lt_bds MODE 'E'.
+    CALL TRANSACTION 'SO10' USING lt_bds MODE 'E'. "#EC "#EC CI_CALLTA
   ENDMETHOD.
 ENDCLASS.
 

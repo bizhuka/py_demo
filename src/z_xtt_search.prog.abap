@@ -23,7 +23,7 @@ FORM initialization.
 ENDFORM.
 
 FORM go.
-  SELECT DISTINCT objid INTO TABLE @DATA(lt_objid)
+  SELECT DISTINCT objid INTO TABLE @DATA(lt_objid)  "#EC "#EC CI_NOFIRST
   FROM wwwdata
   WHERE objid IN @s_objid[].
 

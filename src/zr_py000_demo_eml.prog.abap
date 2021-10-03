@@ -60,7 +60,8 @@ CLASS lcl_email_handler IMPLEMENTATION.
     " lo_screen->customize( iv_fieldname = 'P_UNAME' iv_label = 'Set only your ID' ).
 
     " As popup
-    lo_screen->popup( iv_col_end = 70 ).
+    lo_screen->get_dimension( IMPORTING ev_col_end = DATA(lv_col_end) ).
+    lo_screen->popup( iv_col_end = lv_col_end ).
 
     " Show dialog
     lo_screen->show( io_handler      = me
