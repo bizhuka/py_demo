@@ -105,7 +105,7 @@ CLASS lcl_report IMPLEMENTATION.
 
 **********************************************************************
     " PY part. read RT[]
-    DATA(lt_results) = zcl_py000=>read_payroll_results(
+    DATA(lt_results) = zcl_hr_read=>payroll_results(
       iv_pernr     = pernr-pernr
       iv_begda     = pn-begda
       iv_endda     = pn-endda
@@ -275,7 +275,7 @@ CLASS lcl_report IMPLEMENTATION.
     ENDIF.
 
     " Get results
-    DATA(lt_results) = zcl_py000=>read_payroll_results(
+    DATA(lt_results) = zcl_hr_read=>payroll_results(
       iv_pernr     = ls_alv-pernr
       iv_begda     = pn-begda
       iv_endda     = pn-endda

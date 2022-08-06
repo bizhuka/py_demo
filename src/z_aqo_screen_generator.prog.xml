@@ -17,6 +17,12 @@
     </item>
     <item>
      <ID>S</ID>
+     <KEY>P_VIEW</KEY>
+     <ENTRY>View</ENTRY>
+     <LENGTH>12</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
      <KEY>S_OPT</KEY>
      <ENTRY>.</ENTRY>
      <LENGTH>9</LENGTH>

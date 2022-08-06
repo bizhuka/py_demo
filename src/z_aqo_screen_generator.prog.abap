@@ -8,7 +8,9 @@ DATA:
 SELECTION-SCREEN BEGIN OF BLOCK bl_main WITH FRAME.
 SELECT-OPTIONS:
  s_pack FOR ztaqo_option-package_id DEFAULT '$TMP',
- s_opt  FOR ztaqo_option-option_id.
+ s_opt  FOR ztaqo_option-option_id  DEFAULT 'Main options'.
+PARAMETERS
+ p_view AS CHECKBOX.
 SELECTION-SCREEN END OF BLOCK bl_main.
 
 **********************************************************************
@@ -34,9 +36,9 @@ CLASS lcl_main IMPLEMENTATION.
       MESSAGE |Show { <ls_opt>-package_id } { <ls_opt>-option_id }| TYPE 'S'.
       SET PARAMETER ID: 'ZAQO_PACKAGE_ID' FIELD <ls_opt>-package_id,
                         'ZAQO_OPTION_ID'  FIELD <ls_opt>-option_id,
-                        'ZAQO_COMMAND'    FIELD '_EDIT_VALUES'.
-
-      CALL TRANSACTION 'ZAQO_EDITOR_OLD' AND SKIP FIRST SCREEN. "#EC CI_CALLTA
+                        'ZAQO_COMMAND'    FIELD 'OPEN_OPTION'.
+      DATA(lv_tcode) = COND sytcode( WHEN p_view = abap_true THEN 'ZAQO_VIEWER_OLD' ELSE 'ZAQO_EDITOR_OLD' ).
+      CALL TRANSACTION lv_tcode AND SKIP FIRST SCREEN.   "#EC CI_CALLTA
     ENDLOOP.
   ENDMETHOD.
 ENDCLASS.
