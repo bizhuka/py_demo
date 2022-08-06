@@ -116,7 +116,7 @@ CLASS lcl_report DEFINITION FINAL.
       get_filtered_rt
         IMPORTING
                   is_column_opt      TYPE ts_column_opt
-                  it_payroll_results TYPE zcl_hr_read=>tt_payroll_results
+                  it_payroll_results TYPE zcl_py000=>tt_payroll_results
         RETURNING VALUE(rt_rt)       TYPE tt_rt, " hrpay99_rt,
 
       on_hotspot_click FOR EVENT hotspot_click OF cl_gui_alv_grid ##CALLED
