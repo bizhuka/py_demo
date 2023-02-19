@@ -3,76 +3,82 @@
 *"* declarations
 
 CLASS lcl_regular_pay IMPLEMENTATION.
-  METHOD init.
-    FIELD-SYMBOLS  <lt_pernr> TYPE STANDARD TABLE.
-
-    " Init 1 time only
-    IF it_pernr IS NOT INITIAL.
-      ASSIGN it_pernr TO <lt_pernr>.
-    ELSE.
-      " Try do detect
-      ASSIGN ('(SAPDBPNPCE)G_CLUSTER_SELECTED_PERNRS') TO <lt_pernr>.
-      IF <lt_pernr> IS NOT ASSIGNED.
-        ASSIGN ('(SAPDBPNP)PERNR_TAB[]') TO <lt_pernr>.
-      ENDIF.
-    ENDIF.
-
-    " What?
-    IF <lt_pernr> IS NOT ASSIGNED.
-      zcx_eui_exception=>raise_dump( iv_message = |Is the '{ sy-cprog }' based on LDB ?| ).
-    ENDIF.
-
-    " New items
-    DATA lt_pernr_rgdir LIKE mt_pernr_rgdir.
-
-    " check also the order of table ?
-    lt_pernr_rgdir = CORRESPONDING #( <lt_pernr> ).
-    CHECK lt_pernr_rgdir IS NOT INITIAL.
-
-    " Find all MOLGA
-    SELECT p1~pernr, t~molga INTO TABLE @DATA(lt_p1_molga) "#EC CI_BUFFJOIN
-    FROM pa0001 AS p1 INNER JOIN t001p AS t ON t~werks = p1~werks AND t~btrtl = p1~btrtl
-    FOR ALL ENTRIES IN @lt_pernr_rgdir
-    WHERE p1~pernr =  @lt_pernr_rgdir-pernr
-      AND p1~sprps =  @space
-      AND p1~endda >= @iv_begda
-      AND p1~begda <= @iv_endda.
-
-    " set molga
-    LOOP AT lt_p1_molga ASSIGNING FIELD-SYMBOL(<ls_p1_molga>).
-      READ TABLE lt_pernr_rgdir ASSIGNING FIELD-SYMBOL(<ls_pernr_rgdir>)
-       WITH TABLE KEY pernr = <ls_p1_molga>-pernr.
-      CHECK sy-subrc = 0.
-
-      <ls_pernr_rgdir>-molga = <ls_p1_molga>-molga.
-    ENDLOOP.
-
-    " Insert new items. in a LOOP ?
-    INSERT LINES OF lt_pernr_rgdir INTO TABLE mt_pernr_rgdir.
-  ENDMETHOD.
+*  METHOD init.
+*    FIELD-SYMBOLS  <lt_pernr> TYPE STANDARD TABLE.
+*
+*    " Init 1 time only
+*    IF it_pernr IS NOT INITIAL.
+*      ASSIGN it_pernr TO <lt_pernr>.
+*    ELSE.
+*      " Try do detect
+*      ASSIGN ('(SAPDBPNPCE)G_CLUSTER_SELECTED_PERNRS') TO <lt_pernr>.
+*      IF <lt_pernr> IS NOT ASSIGNED.
+*        ASSIGN ('(SAPDBPNP)PERNR_TAB[]') TO <lt_pernr>.
+*      ENDIF.
+*    ENDIF.
+*
+*    " What?
+*    IF <lt_pernr> IS NOT ASSIGNED.
+*      zcx_eui_exception=>raise_dump( iv_message = |Is the '{ sy-cprog }' based on LDB ?| ).
+*    ENDIF.
+*
+*    " New items
+*    DATA lt_pernr_rgdir LIKE mt_pernr_rgdir.
+*
+*    " check also the order of table ?
+*    lt_pernr_rgdir = CORRESPONDING #( <lt_pernr> ).
+*    CHECK lt_pernr_rgdir IS NOT INITIAL.
+*
+*    " Find all MOLGA
+*    SELECT p1~pernr, t~molga INTO TABLE @DATA(lt_p1_molga) "#EC CI_BUFFJOIN
+*    FROM pa0001 AS p1 INNER JOIN t001p AS t ON t~werks = p1~werks AND t~btrtl = p1~btrtl
+*    FOR ALL ENTRIES IN @lt_pernr_rgdir
+*    WHERE p1~pernr =  @lt_pernr_rgdir-pernr
+*      AND p1~sprps =  @space
+*      AND p1~endda >= @iv_begda
+*      AND p1~begda <= @iv_endda.
+*
+*    " set molga
+*    LOOP AT lt_p1_molga ASSIGNING FIELD-SYMBOL(<ls_p1_molga>).
+*      READ TABLE lt_pernr_rgdir ASSIGNING FIELD-SYMBOL(<ls_pernr_rgdir>)
+*       WITH TABLE KEY pernr = <ls_p1_molga>-pernr.
+*      CHECK sy-subrc = 0.
+*
+*      <ls_pernr_rgdir>-molga = <ls_p1_molga>-molga.
+*    ENDLOOP.
+*
+*    " Insert new items. in a LOOP ?
+*    INSERT LINES OF lt_pernr_rgdir INTO TABLE mt_pernr_rgdir.
+*  ENDMETHOD.
 
   METHOD get_payroll.
-    DO 2 TIMES.
-      " First attempt?
-      DATA(lv_index) = sy-index.
+*    DO 2 TIMES.
+*      " First attempt?
+*      DATA(lv_index) = sy-index.
+*
+*      READ TABLE mt_pernr_rgdir ASSIGNING FIELD-SYMBOL(<ls_pernr_rgdir>)
+*       WITH TABLE KEY pernr = iv_pernr.
+*      IF sy-subrc = 0.
+*        EXIT.
+*      ENDIF.
+*
+*      " init cache
+*      IF lv_index = 1.
+*        init( iv_begda = iv_begda
+*              iv_endda = iv_endda
+*              iv_molga = iv_molga ).
+*      ENDIF.
+*    ENDDO.
+*
+*    " Oops
+*    IF <ls_pernr_rgdir> IS NOT ASSIGNED.
+*      zcx_eui_exception=>raise_dump( iv_message = |Cannot detect MOLGA for '{ iv_pernr }'| ).
+*    ENDIF.
 
-      READ TABLE mt_pernr_rgdir ASSIGNING FIELD-SYMBOL(<ls_pernr_rgdir>)
-       WITH TABLE KEY pernr = iv_pernr.
-      IF sy-subrc = 0.
-        EXIT.
-      ENDIF.
-
-      " init cache
-      IF lv_index = 1.
-        init( iv_begda = iv_begda
-              iv_endda = iv_endda
-              it_pernr = it_pernr ).
-      ENDIF.
-    ENDDO.
-
-    " Oops
-    IF <ls_pernr_rgdir> IS NOT ASSIGNED.
-      zcx_eui_exception=>raise_dump( iv_message = |Cannot detect MOLGA for '{ iv_pernr }'| ).
+    ASSIGN mt_pernr_rgdir[ pernr = iv_pernr ] TO FIELD-SYMBOL(<ls_pernr_rgdir>).
+    IF SY-subrc <> 0.
+      INSERT VALUE #( pernr = iv_pernr
+                      molga = iv_molga ) INTO TABLE mt_pernr_rgdir ASSIGNING <ls_pernr_rgdir>.
     ENDIF.
 
     " Get molga
@@ -91,7 +97,7 @@ CLASS lcl_regular_pay IMPLEMENTATION.
 
     " Use standardc class
     IF iv_std_class = abap_true.
-      DATA(ls_range) = zcl_py000=>get_with_month_end( iv_pay_period && '01' ).
+      DATA(ls_range) = zcl_hr_month=>get_range( iv_pay_period && '01' ).
       cl_hrpay99_prr_4_pnp_reps=>get_instance(
        EXPORTING
         im_molga                = lv_molga
@@ -169,7 +175,7 @@ CLASS lcl_regular_pay IMPLEMENTATION.
       ENDLOOP.
     ENDIF.
 
-    DATA(lt_pernr) = VALUE zcl_py000=>tt_pernr( ).
+    DATA(lt_pernr) = VALUE zcl_hr_read=>tt_pernr( ).
     lv_from = iv_tabix.
     lv_to   = iv_tabix + lc_cache_size - 1.
     LOOP AT mt_pernr_rgdir ASSIGNING <ls_pernr_rgdir> FROM lv_from TO lv_to.

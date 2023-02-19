@@ -1,10 +1,41 @@
 class ZCL_HR_READ definition
   public
   final
-  create public .
+  create private .
 
 public section.
 
+  types:
+    BEGIN OF ts_payroll_results,
+        " Base class
+        payroll        TYPE REF TO cl_hrpay99_prr_4_pnp_reps,
+        " regular & off-cycle run
+        payroll_payper TYPE REF TO cl_hrpay99_prr_4_pnp_payper,
+        " everything within a single day
+        payroll_sngday TYPE REF TO cl_hrpay99_prr_4_pnp_sngday,
+        " everything within a timespan
+        payroll_tispan TYPE REF TO cl_hrpay99_prr_4_pnp_tispan,
+
+        results        TYPE h99_hr_pay_result_tab,
+      END OF ts_payroll_results .
+  types:
+    tt_payroll_results TYPE STANDARD TABLE OF ts_payroll_results WITH DEFAULT KEY .
+  types:
+    tt_pernr TYPE STANDARD TABLE OF hrpernr WITH DEFAULT KEY .
+
+  class-methods PAYROLL_RESULTS
+    importing
+      !IV_PERNR type PERNR-PERNR
+      !IV_BEGDA type BEGDA
+      !IV_ENDDA type ENDDA
+      !IV_PERMO type PERMO default '01'
+      !IV_IPVIEW type H99_IPVIEW default ABAP_TRUE
+      !IV_ADD_RETROES_TO_RGDIR type H99_ADD_RETROES default ABAP_TRUE
+      !IV_ARCH_TOO type ARCH_TOO default ABAP_FALSE
+      !IV_STD_CLASS type ABAP_BOOL optional
+      !IV_MOLGA type MOLGA default 'KZ'
+    returning
+      value(RT_PAYROLL_RESULTS) type TT_PAYROLL_RESULTS .
   class-methods INFTY_ROW
     importing
       !IV_INFTY type INFTY
@@ -73,6 +104,12 @@ public section.
       !IV_PARAM3 type ANY optional
     returning
       value(RR_TAB) type ref to DATA .
+  class-methods FILL_TBDAT
+    importing
+      !IV_INFTY type INFOTYP
+      !IV_TABNR type HRTABNR
+    exporting
+      !ET_TBDAT type STANDARD TABLE .
 protected section.
 private section.
 ENDCLASS.
@@ -80,6 +117,15 @@ ENDCLASS.
 
 
 CLASS ZCL_HR_READ IMPLEMENTATION.
+
+
+  METHOD fill_tbdat.
+    " Call only from LDB PCH!
+    PERFORM int_get_tbdat IN PROGRAM sapdbpch " <--- PUT OBJEC also read HRT* tables
+     TABLES et_tbdat
+     USING  iv_infty
+            iv_tabnr.
+  ENDMETHOD.
 
 
 METHOD infty_om_row.
@@ -259,5 +305,50 @@ METHOD infty_tab.
   LOOP AT <lt_copy> ASSIGNING FIELD-SYMBOL(<ls_copy>) WHERE (iv_where) ##NEEDED.
     APPEND <ls_copy> TO <lt_result>.
   ENDLOOP.
+ENDMETHOD.
+
+
+METHOD payroll_results.
+  " YEAR + MONTH
+  DATA(lv_begda_mon) = CONV faper( iv_begda(6) ).
+
+  " Process all periods month by month
+  WHILE iv_endda(6) >= lv_begda_mon.
+    DATA(ls_payroll) = lcl_regular_pay=>get_payroll(
+      iv_pernr                = iv_pernr
+      iv_begda                = iv_begda
+      iv_endda                = iv_endda
+      iv_molga                = iv_molga
+      iv_std_class            = iv_std_class
+      iv_pay_period           = lv_begda_mon
+      iv_ipview               = iv_ipview
+      iv_permo                = iv_permo
+      iv_add_retroes_to_rgdir = iv_add_retroes_to_rgdir
+      iv_arch_too             = iv_arch_too ).
+
+    IF ls_payroll-payroll IS NOT INITIAL.
+      ls_payroll-payroll->get_pernr_payr_results_allin1(
+        EXPORTING im_pernr                       = iv_pernr
+        IMPORTING ex_pernr_payroll_results       = DATA(lt_pernr_pr)
+        EXCEPTIONS country_version_not_available = 1
+                   no_authorization              = 2
+                   no_entries_found              = 3 " <--- Is it possible ?
+                   read_error                    = 4
+                   OTHERS                        = 5 ).
+      IF sy-subrc = 0.
+        " Add results
+        APPEND VALUE #( payroll        = ls_payroll-payroll
+                        payroll_payper = ls_payroll-payroll_payper
+                        payroll_sngday = ls_payroll-payroll_sngday
+                        payroll_tispan = ls_payroll-payroll_tispan
+                        results = lt_pernr_pr[] ) TO rt_payroll_results.
+      ENDIF.
+      CLEAR lt_pernr_pr[].
+    ENDIF.
+
+    " Next month
+    DATA(lv_next) = CONV d( zcl_hr_month=>get_range( lv_begda_mon && '01' )-endda + 1 ).
+    lv_begda_mon = lv_next(6).
+  ENDWHILE.
 ENDMETHOD.
 ENDCLASS.

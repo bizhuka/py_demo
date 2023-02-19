@@ -6,22 +6,16 @@
    <TEXT>Demo report</TEXT>
    <PARAMS>
     <WWWPARAMS>
-     <RELID>MI</RELID>
-     <OBJID>ZR_PY000_REPORT.XLSX</OBJID>
+     <NAME>fileextension</NAME>
+     <VALUE>.XLSX</VALUE>
+    </WWWPARAMS>
+    <WWWPARAMS>
      <NAME>filename</NAME>
      <VALUE>ZR_PY000_REPORT.XLSX</VALUE>
     </WWWPARAMS>
     <WWWPARAMS>
-     <RELID>MI</RELID>
-     <OBJID>ZR_PY000_REPORT.XLSX</OBJID>
      <NAME>mimetype</NAME>
      <VALUE>application/msexcel</VALUE>
-    </WWWPARAMS>
-    <WWWPARAMS>
-     <RELID>MI</RELID>
-     <OBJID>ZR_PY000_REPORT.XLSX</OBJID>
-     <NAME>fileextension</NAME>
-     <VALUE>.XLSX</VALUE>
     </WWWPARAMS>
    </PARAMS>
   </asx:values>

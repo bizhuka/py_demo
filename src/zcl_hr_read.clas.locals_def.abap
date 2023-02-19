@@ -14,8 +14,8 @@ CLASS lcl_regular_pay DEFINITION INHERITING FROM cl_hrpay99_prr_4_pnp_payper FIN
       tt_pernr_rgdir TYPE SORTED TABLE OF ts_pernr_rgdir WITH UNIQUE KEY pernr,
 
       BEGIN OF ts_payroll,
-        molga      TYPE molga,
-        pay_period TYPE faper,
+        molga          TYPE molga,
+        pay_period     TYPE faper,
 
         " Base class
         payroll        TYPE REF TO cl_hrpay99_prr_4_pnp_reps,
@@ -34,11 +34,11 @@ CLASS lcl_regular_pay DEFINITION INHERITING FROM cl_hrpay99_prr_4_pnp_payper FIN
       mt_payroll     TYPE SORTED TABLE OF ts_payroll WITH UNIQUE KEY molga pay_period.
 
     CLASS-METHODS:
-      init
-        IMPORTING
-          iv_begda TYPE begda
-          iv_endda TYPE endda
-          it_pernr TYPE zcl_py000=>tt_pernr,
+*      init
+*        IMPORTING
+*          iv_begda TYPE begda
+*          iv_endda TYPE endda
+*          iv_molga TYPE molga,
 
       get_payroll
         IMPORTING
@@ -46,7 +46,7 @@ CLASS lcl_regular_pay DEFINITION INHERITING FROM cl_hrpay99_prr_4_pnp_payper FIN
 
                   iv_begda                TYPE begda
                   iv_endda                TYPE endda
-                  it_pernr                TYPE zcl_py000=>tt_pernr
+                  iv_molga                TYPE molga
                   iv_std_class            TYPE abap_bool
 
                   iv_pay_period           TYPE faper
