@@ -30,9 +30,6 @@ public section.
       !IV_INFTY type INFTY
       !IV_SUBTY type SUBTY optional
       !IV_EDIT type ABAP_BOOL default ABAP_FALSE .
-  class-methods SHOW_OBSOLETE_WARNING
-    importing
-      !IV_MESSAGE type CSEQUENCE .
 protected section.
 private section.
 ENDCLASS.
@@ -89,17 +86,5 @@ METHOD pa_drilldown.
   " Show erros
   CHECK sy-subrc <> 0.
   MESSAGE ID sy-msgid TYPE 'S' NUMBER sy-msgno WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4 DISPLAY LIKE 'E'.
-ENDMETHOD.
-
-
-METHOD show_obsolete_warning.
-  DATA(lv_msgty) = COND #( WHEN sy-sysid = 'KD6'
-                           THEN 'W'
-
-                           WHEN sy-sysid = 'KT6' OR sy-sysid = 'SB6' OR sy-sysid = 'DS6'
-                           THEN 'S' ).
-  CHECK lv_msgty IS NOT INITIAL.
-
-  MESSAGE |Method is obsolete!{ iv_message }| TYPE lv_msgty.
 ENDMETHOD.
 ENDCLASS.
