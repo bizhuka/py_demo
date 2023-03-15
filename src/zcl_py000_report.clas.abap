@@ -1,18 +1,15 @@
-CLASS zcl_py000_odata DEFINITION
+CLASS zcl_py000_report DEFINITION
   PUBLIC
-  CREATE PUBLIC .
+  CREATE PUBLIC.
 
   PUBLIC SECTION.
 
-    INTERFACES:
-      zif_sadl_exit,
-      zif_sadl_mpc,
-      zif_sadl_read_runtime,
-      zif_sadl_prepare_read_runtime.
-
+    INTERFACES zif_sadl_exit.
+    INTERFACES zif_sadl_mpc.
+    INTERFACES zif_sadl_read_runtime.
+    INTERFACES zif_sadl_prepare_read_runtime.
 *    METHODS:
 *      constructor.
-
   PROTECTED SECTION.
     TYPES:
       BEGIN OF ts_period,
@@ -32,7 +29,9 @@ CLASS zcl_py000_odata DEFINITION
 
       _change_org_unit_filter CHANGING  cv_filter    TYPE string,
       _change_period_filter   EXPORTING ev_key_date TYPE d
-                              CHANGING  cv_filter   TYPE string.
+                              CHANGING  cv_filter   TYPE string,
+
+      _is_select_one_row RETURNING VALUE(rv_is_one_row) TYPE abap_bool.
   PRIVATE SECTION.
     METHODS:
       _get_sub_orgs IMPORTING iv_orgeh TYPE orgeh RETURNING VALUE(rt_result) TYPE tswhactor,
@@ -47,7 +46,7 @@ ENDCLASS.
 
 
 
-CLASS ZCL_PY000_ODATA IMPLEMENTATION.
+CLASS ZCL_PY000_REPORT IMPLEMENTATION.
 
 
   METHOD zif_sadl_mpc~define.
@@ -96,17 +95,40 @@ CLASS ZCL_PY000_ODATA IMPLEMENTATION.
 
 
   METHOD zif_sadl_read_runtime~execute.
-    DATA lt_callstack TYPE abap_callstack.
-    " Where-Used List
-    CALL FUNCTION 'SYSTEM_CALLSTACK'
-      EXPORTING
-        max_level = 10
-      IMPORTING
-        callstack = lt_callstack.
+    " For demo report only
+    CHECK iv_node_name = 'ZC_PY000_REPORT'.
 
-    IF line_exists( lt_callstack[ blockname = 'IF_SADL_GW_ODATA_RUNTIME~GET_ENTITY' ] ).
-      cv_number_all_hits = 1.
-    ENDIF.
+*    IF _is_select_one_row( ) = abap_true.
+*      cv_number_all_hits = 1.
+*    ENDIF.
+
+    CHECK line_exists( is_requested-elements[ table_line = |SUM_1| ] )
+       OR line_exists( is_requested-elements[ table_line = |SUM_2| ] ).
+
+    TYPES: BEGIN OF ts_filter,
+             key_date TYPE d,
+           END OF ts_filter.
+    ASSIGN ir_key->* TO FIELD-SYMBOL(<ls_key>).
+    DATA(ls_filter) = CORRESPONDING ts_filter( <ls_key> ).
+    CHECK ls_filter-key_date IS NOT INITIAL.
+
+    DATA(lo_rt) = NEW zcl_py000_report_rt( ).
+    LOOP AT ct_data_rows ASSIGNING FIELD-SYMBOL(<ls_row>).
+      DATA(ls_row) = CORRESPONDING zc_py000_report( <ls_row> ).
+      ls_row-key_date = ls_filter-key_date.
+
+
+      lo_rt->read_py( iv_pernr = ls_row-pernr
+                      iv_date  = ls_filter-key_date ).
+
+      lo_rt->get_rt_sum_info( EXPORTING iv_field_name = 'SUM_1'
+                              IMPORTING ev_sum        = ls_row-sum_1 ).
+
+      lo_rt->get_rt_sum_info( EXPORTING iv_field_name = 'SUM_2'
+                              IMPORTING ev_sum        = ls_row-sum_2 ).
+
+      MOVE-CORRESPONDING ls_row TO <ls_row>.
+    ENDLOOP.
   ENDMETHOD.
 
 
@@ -160,7 +182,7 @@ CLASS ZCL_PY000_ODATA IMPLEMENTATION.
       APPEND VALUE #( column_name = <ls_period_field>-endda field_path = <ls_period_field>-endda t_selopt = VALUE #( ( sign = 'I' option = 'GE' low = is_period-key_from ) ) ) TO lt_range ASSIGNING FIELD-SYMBOL(<ls_endda>).
 
       CHECK <ls_period_field>-nullable = abap_true.
-      DATA(c_null) = '77771231'.
+      DATA(c_null) = CONV d( '77771231' ).
       APPEND VALUE #( sign = 'I' option = 'EQ' low = c_null ) TO <ls_begda>-t_selopt.
       APPEND VALUE #( sign = 'I' option = 'EQ' low = c_null ) TO <ls_endda>-t_selopt.
     ENDLOOP.
@@ -185,6 +207,19 @@ CLASS ZCL_PY000_ODATA IMPLEMENTATION.
         result_tab = rt_result
       EXCEPTIONS
         OTHERS     = 0.
+  ENDMETHOD.
+
+
+  METHOD _is_select_one_row.
+    DATA lt_callstack TYPE abap_callstack.
+    " Where-Used List
+    CALL FUNCTION 'SYSTEM_CALLSTACK'
+      EXPORTING
+        max_level = 10
+      IMPORTING
+        callstack = lt_callstack.
+
+    rv_is_one_row = xsdbool( line_exists( lt_callstack[ blockname = 'IF_SADL_GW_ODATA_RUNTIME~GET_ENTITY' ] ) ).
   ENDMETHOD.
 
 

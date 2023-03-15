@@ -1,0 +1,7 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:smartfilterbar="sap.ui.comp.smartfilterbar" xmlns:core="sap.ui.core">
+    <smartfilterbar:ControlConfiguration key="cfKeyDate" label="Key Date" visibleInAdvancedArea="true" groupId="_BASIC" mandatory="mandatory">
+        <smartfilterbar:customControl>
+            <DatePicker id="dpKeyDate" displayFormat="long" valueFormat="yyyy-MM-dd"/>
+        </smartfilterbar:customControl>        
+    </smartfilterbar:ControlConfiguration>    
+</core:FragmentDefinition>

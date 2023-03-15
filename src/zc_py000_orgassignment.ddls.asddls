@@ -5,9 +5,7 @@
 @EndUserText.label: 'Org. Assignment'
 @Search.searchable
 
-@OData.publish: true
 
-@ZABAP.virtualEntity: 'ZCL_PY000_ODATA'
 define view ZC_PY000_OrgAssignment as select from pa0001 as _org_assign
 
 association [0..1] to ZC_PY000_EmployeeGroup    as _EmployeeGroup    on _EmployeeGroup.persg = _org_assign.persg
@@ -26,52 +24,45 @@ association [0..1] to ZC_PY000_PernrPhoto       as _Photo            on _Photo.p
 
 
 {
-    @Search: { defaultSearchElement: true, fuzzinessThreshold: 0.7 }
+    @Search: { defaultSearchElement: true, fuzzinessThreshold: 0.7 } 
     key pernr,
     key endda,
     key begda,
         
         @Search: { defaultSearchElement: true, fuzzinessThreshold: 0.8 }
-        ename,
+        ename,        
         
-        // Current date
-        @Consumption.filter: { selectionType: #INTERVAL, multipleSelections: false } 
+        @EndUserText.label: 'Current date'
         cast (substring( cast( tstmp_current_utctimestamp() as abap.char(17) ), 1, 8 ) as abap.dats) as datum,
         
-        @UI.selectionField: [{ position: 10 }]
         @UI.fieldGroup: [{ qualifier: 'Org', position: 10 }]
         @Consumption.valueHelp: '_EmployeeGroup'
         persg,
         
-        @UI.selectionField: [{ position: 20 }]    
         @UI.fieldGroup: [{ qualifier: 'Org', position: 20 }]
         @Consumption.valueHelp: '_EmployeeSubgroup'
         persk,
         
-        @UI.selectionField: [{ position: 30 }]
         @UI.fieldGroup: [{ qualifier: 'Org', position: 30 }]
         @Consumption.valueHelp: '_PersonnelArea'
         werks as persa,
         
-        @UI.selectionField: [{ position: 40 }]
         @UI.fieldGroup: [{ qualifier: 'Org', position: 40 }]
         @Consumption.valueHelp: '_PersonnelSubArea'
         btrtl,
         
-        @UI.selectionField: [{ position: 45 }]
         @UI.fieldGroup: [{ qualifier: 'Org', position: 45 }]
         @Consumption.valueHelp: '_WorkContract'
         ansvh,
         
         kokrs,
-        @UI.selectionField: [{ position: 50 }]
         @UI.fieldGroup: [{ qualifier: 'Org', position: 50 }]
         @Consumption.valueHelp: '_CostCenter'
         kostl,
         
-        @UI.selectionField: [{ position: 60 }]
         @UI.fieldGroup: [{ qualifier: 'Org', position: 60 }]
         @Consumption.valueHelp: '_OrgUnit'
+        @Consumption.filter: { selectionType: #SINGLE, multipleSelections: false } //, mandatory: true, defaultValue: '40000000'}
         orgeh,
         
         @UI.fieldGroup: [{ qualifier: 'Org', position: 70 }]

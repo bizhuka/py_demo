@@ -1,0 +1,115 @@
+<edmx:Edmx xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx" Version="4.0">
+    <edmx:Reference Uri="https://sap.github.io/odata-vocabularies/vocabularies/Common.xml">
+        <edmx:Include Namespace="com.sap.vocabularies.Common.v1" Alias="Common" />
+    </edmx:Reference>
+    <edmx:Reference Uri="https://sap.github.io/odata-vocabularies/vocabularies/UI.xml">
+        <edmx:Include Namespace="com.sap.vocabularies.UI.v1" Alias="UI" />
+    </edmx:Reference>
+    <edmx:Reference Uri="https://sap.github.io/odata-vocabularies/vocabularies/Communication.xml">
+        <edmx:Include Namespace="com.sap.vocabularies.Communication.v1" Alias="Communication" />
+    </edmx:Reference>
+    <edmx:Reference Uri="/sap/opu/odata/sap/ZC_PY000_REPORT_CDS/$metadata">
+        <edmx:Include Namespace="ZC_PY000_REPORT_CDS" Alias="SAP" />
+    </edmx:Reference>
+    <edmx:DataServices>
+        <Schema xmlns="http://docs.oasis-open.org/odata/ns/edm" Namespace="local">
+            <Annotations Target="ZC_PY000_REPORT_CDS.ZC_PY000_REPORTType">
+                <Annotation Term="UI.HeaderInfo">
+                    <Record>
+                        <PropertyValue Property="TypeName" String="Employee" />
+                        <PropertyValue Property="TypeNamePlural" String="Employees count" />
+                        <PropertyValue Property="ImageUrl" Path="photo_path" />
+                        <PropertyValue Property="Title">
+                            <Record Type="UI.DataField">
+                                <PropertyValue Property="Value" Path="ename" />
+                            </Record>
+                        </PropertyValue>
+                        <PropertyValue Property="Description">
+                            <Record Type="UI.DataField">
+                                <PropertyValue Property="Value" Path="pernr" />
+                            </Record>
+                        </PropertyValue>
+                    </Record>
+                </Annotation>
+
+                <Annotation Term="UI.Facets">
+                    <Collection>
+                        <Record Type="UI.CollectionFacet">
+                            <PropertyValue Property="ID" String="WorkInfo" />
+                            <PropertyValue Property="Label" String="Work info" />
+                            <PropertyValue Property="Facets">
+                                <Collection>
+                                    <Record Type="UI.ReferenceFacet">
+                                        <PropertyValue Property="Label" String="Org. assigtment" />
+                                        <PropertyValue Property="Target" AnnotationPath="@UI.FieldGroup#Org" />
+                                    </Record>
+                                </Collection>
+                            </PropertyValue>
+                        </Record>
+
+                        <Record Type="UI.CollectionFacet">
+                            <PropertyValue Property="ID" String="idDrillDown" />
+                            <PropertyValue Property="Label" String="RT drill down info" />
+                            <PropertyValue Property="Facets">
+                                <Collection>
+                                    <Record Type="UI.CollectionFacet">
+                                        <PropertyValue Property="ID" String="idSUM1" />
+                                        <PropertyValue Property="Label" String="Sum 1" />
+                                        <PropertyValue Property="Facets">
+                                            <Collection>
+                                                <Record Type="UI.ReferenceFacet">
+                                                    <PropertyValue Property="Target" AnnotationPath="to_RT_SUM_1/@UI.LineItem" />
+                                                </Record>
+                                            </Collection>
+                                        </PropertyValue>
+                                    </Record>
+
+                                    <Record Type="UI.CollectionFacet">
+                                        <PropertyValue Property="ID" String="idSUM2" />
+                                        <PropertyValue Property="Label" String="Sum 2" />
+                                        <PropertyValue Property="Facets">
+                                            <Collection>
+                                                <Record Type="UI.ReferenceFacet">
+                                                    <PropertyValue Property="ID" String="idSUM2" />
+                                                    <PropertyValue Property="Target" AnnotationPath="to_RT_SUM_2/@UI.LineItem" />
+                                                </Record>
+                                            </Collection>
+                                        </PropertyValue>
+                                    </Record>
+                                </Collection>
+                            </PropertyValue>
+                        </Record>
+                    </Collection>
+                </Annotation>
+            </Annotations>
+
+
+            <!-- Agency tab -->
+            <Annotations Target="ZC_PY000_REPORT_CDS.ZC_PY000_REPORT_RTType">
+                <PropertyValue Property="ID" String="idDrillDownDetail" />
+                <PropertyValue Property="Label" String="RT drill down info" />
+                <Annotation Term="UI.Facets">
+                    <Collection>
+                        <Record Type="UI.ReferenceFacet">
+                            <PropertyValue Property="ID" String="idRTSumMain" />
+                            <PropertyValue Property="Label" String="Sum Info" />
+                            <PropertyValue Property="Target" AnnotationPath="@UI.FieldGroup#GrpMain" />
+                        </Record>
+
+                        <Record Type="UI.ReferenceFacet">
+                            <PropertyValue Property="ID" String="idRTSumPY" />
+                            <PropertyValue Property="Label" String="Payroll" />
+                            <PropertyValue Property="Target" AnnotationPath="@UI.FieldGroup#GrpPY" />
+                        </Record>
+
+                        <Record Type="UI.ReferenceFacet">
+                            <PropertyValue Property="ID" String="idRTSumOther" />
+                            <PropertyValue Property="Label" String="Other" />
+                            <PropertyValue Property="Target" AnnotationPath="@UI.FieldGroup#GrpOther" />
+                        </Record>
+                    </Collection>
+                </Annotation>
+            </Annotations> 
+        </Schema>
+    </edmx:DataServices>
+</edmx:Edmx>

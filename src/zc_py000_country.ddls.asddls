@@ -3,12 +3,14 @@
 @AbapCatalog.preserveKey: true
 @AccessControl.authorizationCheck: #NOT_REQUIRED
 @EndUserText.label: 'Country'
-
+@Search.searchable
 
 define view ZC_PY000_Country as select from t005t {
-    @ObjectModel.text.element: [ 'landx' ]  
+    @Search: { defaultSearchElement: true, fuzzinessThreshold: 0.9 }
+    @ObjectModel.text.element: [ 'CountryText' ]  
     @EndUserText.label: 'Country'
     key land1,
     
-        landx
+        @Search: { defaultSearchElement: true, fuzzinessThreshold: 0.7 }
+        landx as CountryText
 }where spras = $session.system_language
