@@ -87,13 +87,13 @@ CLASS ZCL_PY000_AVATAR IMPLEMENTATION.
     DATA(lv_content)   = get_employee_photo( iv_pernr = ls_item-pernr
                                              iv_size  = ls_item-img_size ).
     IF lv_content IS INITIAL.
-      lv_content = cl_http_utility=>decode_x_base64( 'Qk06AAAAAAAAADYAAAAoAAAAAQAAAAEAAAABABgAAAAAAAQAAADEDgAAxA4AAAAAAAAAAAAA////AA==' ).
+      lv_content = cl_http_utility=>decode_x_base64( 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAAAl21bKAAAAA1BMVEUAAACnej3aAAAAAXRSTlMAQObYZgAAAApJREFUCNdjYAAAAAIAAeIhvDMAAAAASUVORK5CYII=' ).
     ENDIF.
 
-    DATA(lv_mime_type) = |image/jpeg|.
+    DATA(lv_mime_type) = |image/png|.
     io_srv_runtime->set_header(
          VALUE #( name  = 'Content-Disposition'
-                  value = |inline; filename="ok.jpg"| ) ).
+                  value = |inline; filename="ok.png"| ) ).
 
     " Any binary file
     er_stream = NEW /iwbep/cl_mgw_abs_data=>ty_s_media_resource(
@@ -110,7 +110,7 @@ CLASS ZCL_PY000_AVATAR IMPLEMENTATION.
     o_ip->get_info( EXPORTING
                       iv_handle   = lv_hndl
                     IMPORTING
-*                      ev_mimetype = DATA(lv_mimetype)
+                      ev_mimetype = DATA(lv_mimetype)
                       ev_xres     = DATA(lv_xres)
                       ev_yres     = DATA(lv_yres)
 *                      ev_xdpi     = DATA(lv_xdpi)

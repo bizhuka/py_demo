@@ -5,7 +5,8 @@ CLASS zcl_py000_amdp DEFINITION
 
   PUBLIC SECTION.
     INTERFACES if_amdp_marker_hdb.
-    CLASS-METHODS get_long_texts FOR TABLE FUNCTION zc_py000_longtext.
+    CLASS-METHODS:
+      get_long_texts FOR TABLE FUNCTION zc_py000_longtext.
   PROTECTED SECTION.
   PRIVATE SECTION.
 ENDCLASS.

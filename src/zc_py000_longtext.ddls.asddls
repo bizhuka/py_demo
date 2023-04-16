@@ -10,6 +10,6 @@ returns {
         key istat:     istat_d;
         key begda:     begdatum;
         key endda:     enddatum;
-            long_text: abap.char( 1000 );
+            long_text: abap.char( 1333 );   // abap.sstring ?
                             
 } implemented by method zcl_py000_amdp=>get_long_texts;
