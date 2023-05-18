@@ -24,7 +24,7 @@ ENDCLASS.
 
 
 
-CLASS ZCL_PY000_AVATAR IMPLEMENTATION.
+CLASS zcl_py000_avatar IMPLEMENTATION.
 
 
   METHOD get_employee_photo.
@@ -117,10 +117,10 @@ CLASS ZCL_PY000_AVATAR IMPLEMENTATION.
 *                      ev_ydpi     = DATA(lv_ydpi)
 *                      ev_bitdepth = DATA(lv_bitdepth)
                       ).
-
+    DATA(lv_new_yres) = CONV decfloat34( iv_size / lv_xres * lv_yres ).
     o_ip->resize(  iv_handle = lv_hndl
                    iv_xres   = iv_size
-                   iv_yres   = iv_size / lv_xres * lv_yres ).
+                   iv_yres   = CONV #( lv_new_yres ) ).
 
     o_ip->convert( iv_handle = lv_hndl
                    iv_format = cl_fxs_mime_types=>co_image_jpeg ).
