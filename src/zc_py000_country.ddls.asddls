@@ -6,11 +6,11 @@
 @Search.searchable
 
 define view ZC_PY000_Country as select from t005t {
-    @Search: { defaultSearchElement: true, fuzzinessThreshold: 0.9 }
+    @Search: { defaultSearchElement: true, fuzzinessThreshold: 1 }
     @ObjectModel.text.element: [ 'CountryText' ]  
     @EndUserText.label: 'Country'
     key land1,
     
-        @Search: { defaultSearchElement: true, fuzzinessThreshold: 0.7 }
+        @Search: { defaultSearchElement: true, fuzzinessThreshold: 1 }
         landx as CountryText
 }where spras = $session.system_language

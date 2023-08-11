@@ -83,9 +83,7 @@ CLASS ZCL_PY000_REPORT_RT IMPLEMENTATION.
              field_name TYPE string,
              pos        TYPE int4,
            END OF ts_filter.
-
-    ASSIGN ir_key->* TO FIELD-SYMBOL(<ls_key>).
-    DATA(ls_filter) = CORRESPONDING ts_filter( <ls_key> ).
+    DATA(ls_filter) = CORRESPONDING ts_filter( is_filter ).
 
     " 1 month
     read_py( iv_pernr = ls_filter-pernr

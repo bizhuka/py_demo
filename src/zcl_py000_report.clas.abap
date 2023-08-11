@@ -108,8 +108,7 @@ CLASS ZCL_PY000_REPORT IMPLEMENTATION.
     TYPES: BEGIN OF ts_filter,
              key_date TYPE d,
            END OF ts_filter.
-    ASSIGN ir_key->* TO FIELD-SYMBOL(<ls_key>).
-    DATA(ls_filter) = CORRESPONDING ts_filter( <ls_key> ).
+    DATA(ls_filter) = CORRESPONDING ts_filter( is_filter ).
     CHECK ls_filter-key_date IS NOT INITIAL.
 
     DATA(lo_rt) = NEW zcl_py000_report_rt( ).
